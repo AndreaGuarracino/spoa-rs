@@ -38,6 +38,11 @@ namespace spoa_rs {
     void add_alignment(std::unique_ptr<spoa::Graph>& graph, std::unique_ptr<spoa::Alignment> const& alignment, rust::Str seq);
     void add_alignment_with_weights(std::unique_ptr<spoa::Graph>& graph, std::unique_ptr<spoa::Alignment> const& alignment, rust::Str seq, rust::Slice<const uint32_t> weights);
 
+    // Use rust::Slice for the headers parameter
+    std::unique_ptr<std::string> generate_gfa(
+        const std::unique_ptr<spoa::Graph>& graph,
+        rust::Slice<const rust::String> headers,
+        bool include_consensus);
 }
 
 #endif //SPOA_RS_SPOA_RS_HPP

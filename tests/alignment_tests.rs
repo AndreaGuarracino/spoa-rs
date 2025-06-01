@@ -23,7 +23,7 @@ fn alignment_tests() {
     let truth = vec![
         "AATG-GTTGTC-ACGTCAGT-",
         "ATTGTAAAGTC-TCGTCGGT-",
-        "------TTGTCAACATCAGTA"
+        "------TTGTCAACATCAGTA",
     ];
 
     for (i, aln) in graph.generate_msa().into_iter().enumerate() {

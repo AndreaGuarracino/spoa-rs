@@ -2,7 +2,7 @@ extern crate cxx;
 
 use cxx::UniquePtr;
 
-#[cxx::bridge(namespace="spoa_rs")]
+#[cxx::bridge(namespace = "spoa_rs")]
 mod ffi {
     #[namespace = "spoa"]
     #[repr(i32)]
@@ -14,7 +14,7 @@ mod ffi {
         kNW,
 
         /// Overlap alignment
-        kOV
+        kOV,
     }
 
     unsafe extern "C++" {
@@ -38,14 +38,48 @@ mod ffi {
         fn generate_consensus(graph: &UniquePtr<Graph>) -> UniquePtr<CxxString>;
         fn generate_msa(graph: &UniquePtr<Graph>) -> UniquePtr<CxxVector<CxxString>>;
 
-        fn create_alignment_engine_linear(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap: i8) -> UniquePtr<AlignmentEngine>;
-        fn create_alignment_engine_affine(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap_open: i8, score_gap_extend: i8) -> UniquePtr<AlignmentEngine>;
-        fn create_alignment_engine_convex(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap_open: i8, score_gap_extend: i8,
-                                          score_gap_open2: i8, score_gap_extend2: i8) -> UniquePtr<AlignmentEngine>;
+        fn generate_gfa(
+            graph: &UniquePtr<Graph>,
+            headers: &[String],
+            include_consensus: bool,
+        ) -> UniquePtr<CxxString>;
 
-        fn align(alignment_engine: &mut UniquePtr<AlignmentEngine>, seq: &str, graph: &UniquePtr<Graph>, score: &mut i32) -> UniquePtr<Alignment>;
+        fn create_alignment_engine_linear(
+            aln_type: AlignmentType,
+            score_match: i8,
+            score_mismatch: i8,
+            score_gap: i8,
+        ) -> UniquePtr<AlignmentEngine>;
+        fn create_alignment_engine_affine(
+            aln_type: AlignmentType,
+            score_match: i8,
+            score_mismatch: i8,
+            score_gap_open: i8,
+            score_gap_extend: i8,
+        ) -> UniquePtr<AlignmentEngine>;
+        fn create_alignment_engine_convex(
+            aln_type: AlignmentType,
+            score_match: i8,
+            score_mismatch: i8,
+            score_gap_open: i8,
+            score_gap_extend: i8,
+            score_gap_open2: i8,
+            score_gap_extend2: i8,
+        ) -> UniquePtr<AlignmentEngine>;
+
+        fn align(
+            alignment_engine: &mut UniquePtr<AlignmentEngine>,
+            seq: &str,
+            graph: &UniquePtr<Graph>,
+            score: &mut i32,
+        ) -> UniquePtr<Alignment>;
         fn add_alignment(graph: &mut UniquePtr<Graph>, aln: &UniquePtr<Alignment>, seq: &str);
-        fn add_alignment_with_weights(graph: &mut UniquePtr<Graph>, aln: &UniquePtr<Alignment>, seq: &str, weights: &[u32]);
+        fn add_alignment_with_weights(
+            graph: &mut UniquePtr<Graph>,
+            aln: &UniquePtr<Alignment>,
+            seq: &str,
+            weights: &[u32],
+        );
 
     }
 }
@@ -55,17 +89,25 @@ mod ffi {
 /// Under the hood it just holds a pointer to the alignment, and SPOA's `Alignment` type is a C++
 /// `vector` of `std::pair`s, matching the query position and the node rank.
 pub struct Alignment {
-    alignment_ptr: UniquePtr<ffi::Alignment>
+    alignment_ptr: UniquePtr<ffi::Alignment>,
 }
 
 /// Thin wrapper around SPOA's partial order graph object
 pub struct Graph {
-    graph_impl: UniquePtr<ffi::Graph>
+    graph_impl: UniquePtr<ffi::Graph>,
+}
+
+impl Default for Graph {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Graph {
     pub fn new() -> Self {
-        Self { graph_impl: ffi::new_graph() }
+        Self {
+            graph_impl: ffi::new_graph(),
+        }
     }
 
     pub fn node_count(&self) -> usize {
@@ -81,53 +123,103 @@ impl Graph {
     }
 
     pub fn add_alignment_with_weights(&mut self, alignment: Alignment, seq: &str, weights: &[u32]) {
-        ffi::add_alignment_with_weights(&mut self.graph_impl, &alignment.alignment_ptr, seq, weights);
+        ffi::add_alignment_with_weights(
+            &mut self.graph_impl,
+            &alignment.alignment_ptr,
+            seq,
+            weights,
+        );
     }
 
     pub fn generate_consensus(&self) -> String {
-        ffi::generate_consensus(&self.graph_impl).to_string_lossy().to_string()
+        ffi::generate_consensus(&self.graph_impl)
+            .to_string_lossy()
+            .to_string()
     }
 
     pub fn generate_msa(&self) -> Vec<String> {
         let alignments = ffi::generate_msa(&self.graph_impl);
 
-        alignments.iter()
+        alignments
+            .iter()
             .map(|v| v.to_string_lossy().to_string())
             .collect()
     }
-}
 
+    pub fn generate_gfa(&self, headers: &[String], include_consensus: bool) -> String {
+        // Just pass the slice directly - CXX will handle the conversion
+        ffi::generate_gfa(&self.graph_impl, headers, include_consensus)
+            .to_string_lossy()
+            .to_string()
+    }
+}
 
 /// Thin wrapper around SPOA's AlignmentEngine, the main alignment workhorse
 pub struct AlignmentEngine {
-    engine_impl: UniquePtr<ffi::AlignmentEngine>
+    engine_impl: UniquePtr<ffi::AlignmentEngine>,
 }
 
 impl AlignmentEngine {
-    pub fn new_linear(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap: i8) -> Self {
+    pub fn new_linear(
+        aln_type: AlignmentType,
+        score_match: i8,
+        score_mismatch: i8,
+        score_gap: i8,
+    ) -> Self {
         Self {
-            engine_impl: ffi::create_alignment_engine_linear(aln_type, score_match, score_mismatch, score_gap)
+            engine_impl: ffi::create_alignment_engine_linear(
+                aln_type,
+                score_match,
+                score_mismatch,
+                score_gap,
+            ),
         }
     }
 
-    pub fn new_affine(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap_open: i8, score_gap_extend: i8) -> Self {
+    pub fn new_affine(
+        aln_type: AlignmentType,
+        score_match: i8,
+        score_mismatch: i8,
+        score_gap_open: i8,
+        score_gap_extend: i8,
+    ) -> Self {
         Self {
-            engine_impl: ffi::create_alignment_engine_affine(aln_type, score_match, score_mismatch, score_gap_open, score_gap_extend)
+            engine_impl: ffi::create_alignment_engine_affine(
+                aln_type,
+                score_match,
+                score_mismatch,
+                score_gap_open,
+                score_gap_extend,
+            ),
         }
     }
 
-    pub fn new_convex(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap_open: i8, score_gap_extend: i8,
-                      score_gap_open2: i8, score_gap_extend2: i8) -> Self {
+    pub fn new_convex(
+        aln_type: AlignmentType,
+        score_match: i8,
+        score_mismatch: i8,
+        score_gap_open: i8,
+        score_gap_extend: i8,
+        score_gap_open2: i8,
+        score_gap_extend2: i8,
+    ) -> Self {
         Self {
-            engine_impl: ffi::create_alignment_engine_convex(aln_type, score_match, score_mismatch, score_gap_open, score_gap_extend,
-                                                             score_gap_open2, score_gap_extend2)
+            engine_impl: ffi::create_alignment_engine_convex(
+                aln_type,
+                score_match,
+                score_mismatch,
+                score_gap_open,
+                score_gap_extend,
+                score_gap_open2,
+                score_gap_extend2,
+            ),
         }
     }
 
     pub fn align(&mut self, seq: &str, graph: &Graph) -> (i32, Alignment) {
         let mut score: i32 = 0;
         let alignment = Alignment {
-            alignment_ptr: ffi::align(&mut self.engine_impl, seq, &graph.graph_impl, &mut score)
+            alignment_ptr: ffi::align(&mut self.engine_impl, seq, &graph.graph_impl, &mut score),
         };
 
         (score, alignment)
