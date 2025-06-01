@@ -1,11 +1,9 @@
-use std::path::PathBuf;
 use cmake;
 use cxx_build::CFG;
 use std::fs::canonicalize;
-
+use std::path::PathBuf;
 
 fn main() {
-
     let out_dir = cmake::Config::new("spoa")
         //.uses_cxx11() // Deprecated
         .define("spoa_install", "OFF")
@@ -14,7 +12,10 @@ fn main() {
         .build_target("spoa")
         .build();
 
-    println!("cargo:rustc-link-search=native={}/build/lib", out_dir.display());
+    println!(
+        "cargo:rustc-link-search=native={}/build/lib",
+        out_dir.display()
+    );
     println!("cargo:rustc-link-lib=spoa");
 
     let spoa_include = canonicalize(PathBuf::from("spoa/include")).unwrap();
