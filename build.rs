@@ -1,4 +1,3 @@
-use cmake;
 use cxx_build::CFG;
 use std::fs::canonicalize;
 use std::path::PathBuf;
