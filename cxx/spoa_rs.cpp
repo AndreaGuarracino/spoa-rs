@@ -1,5 +1,6 @@
 #include "spoa_rs/cxx/spoa_rs.hpp"
 #include <algorithm>
+#include <sstream> 
 
 namespace spoa_rs {
     using std::int8_t;
@@ -56,6 +57,97 @@ namespace spoa_rs {
         std::copy(weights.begin(), weights.end(), cpp_weights.begin());
 
         graph->AddAlignment(*alignment, sequence.data(), sequence.length(), cpp_weights);
+    }
+
+std::unique_ptr<std::string> generate_gfa(
+        const std::unique_ptr<spoa::Graph>& graph,
+        rust::Slice<const rust::String> headers,
+        bool include_consensus) {
+        
+        // Convert rust::Slice<const rust::String> to std::vector<std::string>
+        std::vector<std::string> cpp_headers;
+        cpp_headers.reserve(headers.size());
+        for (const auto& header : headers) {
+            cpp_headers.push_back(std::string(header));
+        }
+        
+        if (cpp_headers.size() < graph->sequences().size()) {
+            throw std::runtime_error("Missing header(s) for GFA generation");
+        }
+
+        std::ostringstream oss;
+        
+        // Generate consensus nodes for marking
+        graph->GenerateConsensus();
+        std::vector<bool> is_consensus_node(graph->nodes().size(), false);
+        for (const auto& it : graph->consensus()) {
+            is_consensus_node[it->id] = true;
+        }
+
+        // Write header
+        oss << "H\tVN:Z:1.0\n";
+        
+        // Write segments (nodes)
+        for (const auto& it : graph->nodes()) {
+            oss << "S\t" 
+                << it->id + 1 << "\t" 
+                << static_cast<char>(graph->decoder(it->code));
+            if (is_consensus_node[it->id]) {
+                oss << "\tic:Z:true";
+            }
+            oss << "\n";
+        }
+        
+        // Write links (edges)
+        for (const auto& it : graph->nodes()) {
+            for (const auto& jt : it->outedges) {
+                oss << "L\t"
+                    << it->id + 1 << "\t"
+                    << "+\t"
+                    << jt->head->id + 1 << "\t"
+                    << "+\t"
+                    << "0M\t"
+                    << "ew:f:" << jt->weight;
+                if (is_consensus_node[it->id] && is_consensus_node[jt->head->id]) {
+                    oss << "\tic:Z:true";
+                }
+                oss << "\n";
+            }
+        }
+        
+        // Write paths (sequences)
+        for (std::uint32_t i = 0; i < graph->sequences().size(); ++i) {
+            oss << "P\t" << cpp_headers[i] << "\t";
+            
+            std::vector<std::uint32_t> path;
+            auto curr = graph->sequences()[i];
+            while (curr) {
+                path.emplace_back(curr->id + 1);
+                curr = curr->Successor(i);
+            }
+            
+            for (std::uint32_t j = 0; j < path.size(); ++j) {
+                if (j != 0) {
+                    oss << ",";
+                }
+                oss << path[j] << "+";
+            }
+            oss << "\t*\n";
+        }
+        
+        // Write consensus path if requested
+        if (include_consensus) {
+            oss << "P\tConsensus\t";
+            for (std::uint32_t i = 0; i < graph->consensus().size(); ++i) {
+                if (i != 0) {
+                    oss << ",";
+                }
+                oss << graph->consensus()[i]->id + 1 << "+";
+            }
+            oss << "\t*\n";
+        }
+        
+        return std::make_unique<std::string>(oss.str());
     }
 
 }

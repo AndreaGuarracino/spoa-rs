@@ -7,7 +7,7 @@ use std::fs::canonicalize;
 fn main() {
 
     let out_dir = cmake::Config::new("spoa")
-        .uses_cxx11()
+        //.uses_cxx11() // Deprecated
         .define("spoa_install", "OFF")
         .define("spoa_build_exe", "OFF")
         .define("spoa_build_tests", "OFF")

@@ -38,6 +38,12 @@ mod ffi {
         fn generate_consensus(graph: &UniquePtr<Graph>) -> UniquePtr<CxxString>;
         fn generate_msa(graph: &UniquePtr<Graph>) -> UniquePtr<CxxVector<CxxString>>;
 
+        fn generate_gfa(
+            graph: &UniquePtr<Graph>, 
+            headers: &[String],
+            include_consensus: bool
+        ) -> UniquePtr<CxxString>;
+        
         fn create_alignment_engine_linear(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap: i8) -> UniquePtr<AlignmentEngine>;
         fn create_alignment_engine_affine(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap_open: i8, score_gap_extend: i8) -> UniquePtr<AlignmentEngine>;
         fn create_alignment_engine_convex(aln_type: AlignmentType, score_match: i8, score_mismatch: i8, score_gap_open: i8, score_gap_extend: i8,
@@ -94,6 +100,13 @@ impl Graph {
         alignments.iter()
             .map(|v| v.to_string_lossy().to_string())
             .collect()
+    }
+
+    pub fn generate_gfa(&self, headers: &[String], include_consensus: bool) -> String {
+        // Just pass the slice directly - CXX will handle the conversion
+        ffi::generate_gfa(&self.graph_impl, headers, include_consensus)
+            .to_string_lossy()
+            .to_string()
     }
 }
 
