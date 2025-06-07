@@ -111,7 +111,7 @@
          (append binutils coreutils-minimal ;; for the shell
                  )))
     (propagated-inputs (list rust rust-cargo nss-certs openssl perl gnu-make-4.2
-                             coreutils-minimal which perl binutils gcc-toolchain pkg-config zlib
+                             coreutils-minimal which perl binutils gcc-toolchain pkg-config zlib cmake
                              )) ;; to run cargo build in the shell
     (arguments
      `(
