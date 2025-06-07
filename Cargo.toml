@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 description = "Rust bindings for SPOA (SIMD POA)"
-license = "BSD-3 Clause"
+license = "BSD-3-Clause"
 repository = "https://github.com/AndreaGuarracino/spoa-rs"
 homepage = "https://github.com/AndreaGuarracino/spoa-rs"
 documentation = "https://docs.rs/spoa_rs"
