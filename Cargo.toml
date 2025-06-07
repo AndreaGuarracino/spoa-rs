@@ -3,6 +3,17 @@ name = "spoa_rs"
 version = "0.1.0"
 edition = "2021"
 
+description = "Rust bindings for SPOA (SIMD POA)"
+license = "BSD-3 Clause"
+repository = "https://github.com/AndreaGuarracino/spoa-rs"
+homepage = "https://github.com/AndreaGuarracino/spoa-rs"
+documentation = "https://docs.rs/spoa_rs"
+
+authors = ["Andrea Guarracino <aguarra1@uthsc.edu>"]
+readme = "README.md"
+keywords = ["bioinformatics", "alignment", "spoa", "msa", "consensus"]
+categories = ["science", "algorithms"]
+
 links = "spoa"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,6 +22,5 @@ links = "spoa"
 cxx = "~1.0"
 
 [build-dependencies]
-cmake = "~0.1"
+cmake = "0.1"
 cxx-build = "~1.0"
-
