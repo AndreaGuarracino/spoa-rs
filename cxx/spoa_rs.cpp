@@ -59,7 +59,7 @@ namespace spoa_rs {
         graph->AddAlignment(*alignment, sequence.data(), sequence.length(), cpp_weights);
     }
 
-std::unique_ptr<std::string> generate_gfa(
+    std::unique_ptr<std::string> generate_gfa(
         const std::unique_ptr<spoa::Graph>& graph,
         rust::Slice<const rust::String> headers,
         bool include_consensus) {
@@ -149,5 +149,4 @@ std::unique_ptr<std::string> generate_gfa(
         
         return std::make_unique<std::string>(oss.str());
     }
-
 }
