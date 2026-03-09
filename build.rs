@@ -3,13 +3,18 @@ use std::fs::canonicalize;
 use std::path::PathBuf;
 
 fn main() {
-    let out_dir = cmake::Config::new("spoa")
-        //.uses_cxx11() // Deprecated
+    let mut cmake_config = cmake::Config::new("spoa");
+    cmake_config
         .define("spoa_install", "OFF")
         .define("spoa_build_exe", "OFF")
-        .define("spoa_build_tests", "OFF")
-        .build_target("spoa")
-        .build();
+        .define("spoa_build_tests", "OFF");
+
+    // Disable -march=native for portable builds
+    if std::env::var("PORTABLE").unwrap_or_default() == "1" {
+        cmake_config.define("spoa_optimize_for_native", "OFF");
+    }
+
+    let out_dir = cmake_config.build_target("spoa").build();
 
     println!(
         "cargo:rustc-link-search=native={}/build/lib",
